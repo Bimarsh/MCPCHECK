@@ -1,0 +1,14 @@
+{
+  "name": "mcpcheck",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "test:backend": "cd backend && pytest"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+
