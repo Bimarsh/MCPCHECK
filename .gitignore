@@ -1,12 +1,10 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
 .venv/
 venv/
 
 # Build outputs
 dist/
-frontend/dist/
 .vercel/
 
 # Environment files

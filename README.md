@@ -19,7 +19,7 @@ backend/app/main.py          FastAPI app and API routes
 backend/app/database.py      Neon/Postgres persistence and local SQLite fallback
 backend/app/analyzer/        Static GitHub/MCP analysis modules
 backend/tests/               Backend unit tests
-frontend/src/                React app
+src/                         React app
 vercel.json                  Vercel build, function, and rewrite config
 ```
 
@@ -57,7 +57,7 @@ The API creates the `reports` table automatically on first use.
 Install frontend dependencies:
 
 ```bash
-npm --prefix frontend install
+npm install
 ```
 
 Install backend dependencies:
