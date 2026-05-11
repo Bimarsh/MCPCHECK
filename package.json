@@ -7,6 +7,7 @@
     "dev": "vite --host 0.0.0.0 --port 5173",
     "dev:frontend": "npm run dev",
     "build": "tsc && vite build",
+    "now-build": "npm run build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "test:backend": "cd backend && pytest"
   },
