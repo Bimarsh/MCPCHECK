@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ExternalLink, Github, Loader2, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, GitBranch, Loader2, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { analyzeRepo, fetchReport } from "./api";
 import type { Report, RiskLevel } from "./types";
@@ -53,7 +53,7 @@ function HomePage() {
         <form className="analyze-panel" onSubmit={submit}>
           <label htmlFor="repo-url">GitHub repository URL</label>
           <div className="input-row">
-            <Github size={20} />
+            <GitBranch size={20} />
             <input
               id="repo-url"
               value={repoUrl}
@@ -222,4 +222,3 @@ export function App() {
   }
   return <HomePage />;
 }
-

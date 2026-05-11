@@ -77,7 +77,7 @@ uvicorn app.main:app --app-dir backend --reload --port 8000
 Run the frontend locally:
 
 ```bash
-npm run dev:frontend
+npm run dev
 ```
 
 Open `http://localhost:5173`. The Vite dev server proxies `/api` to `http://localhost:8000`.
