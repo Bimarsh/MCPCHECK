@@ -10,6 +10,16 @@ export interface AnalyzeResponse {
   };
 }
 
+export interface TopRepository {
+  repoUrl: string;
+  repoName: string;
+  checkCount: number;
+  confidence: number;
+  overallScore: number;
+  riskLevel: RiskLevel;
+  latestReportId: string;
+}
+
 export interface ToolInfo {
   name: string;
   description: string;
@@ -73,4 +83,3 @@ export interface Report {
     skipped: string[];
   };
 }
-

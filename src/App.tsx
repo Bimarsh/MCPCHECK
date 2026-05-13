@@ -1,7 +1,7 @@
-import { AlertTriangle, CheckCircle2, ExternalLink, GitBranch, Loader2, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, GitBranch, Loader2, ShieldAlert, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { analyzeRepo, fetchReport } from "./api";
-import type { Report, RiskLevel } from "./types";
+import { analyzeRepo, fetchReport, fetchTopRepositories } from "./api";
+import type { Report, RiskLevel, TopRepository } from "./types";
 
 const examples = [
   "https://github.com/modelcontextprotocol/servers",
@@ -20,6 +20,14 @@ function HomePage() {
   const [repoUrl, setRepoUrl] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [topRepositories, setTopRepositories] = useState<TopRepository[]>([]);
+  const [topRepositoriesError, setTopRepositoriesError] = useState("");
+
+  useEffect(() => {
+    fetchTopRepositories()
+      .then(setTopRepositories)
+      .catch((err) => setTopRepositoriesError(err instanceof Error ? err.message : "Unable to load top repositories."));
+  }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -74,6 +82,32 @@ function HomePage() {
             ))}
           </div>
         </form>
+      </section>
+
+      <section className="top-repositories">
+        <div className="section-heading">
+          <div>
+            <div className="eyebrow"><Trophy size={16} /> Top checked</div>
+            <h2>Most checked MCP repos</h2>
+          </div>
+          <span>Confidence is from the latest saved report.</span>
+        </div>
+        {topRepositoriesError ? <p className="error">{topRepositoriesError}</p> : null}
+        {topRepositories.length ? (
+          <div className="top-list">
+            {topRepositories.map((repo, index) => (
+              <a className="top-row" href={`/reports/${encodeURIComponent(repo.latestReportId)}`} key={repo.repoName}>
+                <span className="rank">{index + 1}</span>
+                <span className="repo-name">{repo.repoName}</span>
+                <span>{repo.checkCount} {repo.checkCount === 1 ? "check" : "checks"}</span>
+                <span>{Math.round(repo.confidence * 100)}% confidence</span>
+                <span>{repo.overallScore}/100</span>
+              </a>
+            ))}
+          </div>
+        ) : topRepositoriesError ? null : (
+          <p>No MCP repository checks have been saved yet.</p>
+        )}
       </section>
     </main>
   );

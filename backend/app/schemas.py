@@ -25,6 +25,16 @@ class AnalyzeResponse(BaseModel):
     summary: AnalyzeSummary
 
 
+class TopRepository(BaseModel):
+    repoUrl: str
+    repoName: str
+    checkCount: int
+    confidence: float
+    overallScore: int
+    riskLevel: RiskLevel
+    latestReportId: str
+
+
 class ReportRecord(BaseModel):
     id: str
     repo_url: str
@@ -33,4 +43,3 @@ class ReportRecord(BaseModel):
     overall_score: int
     risk_level: RiskLevel
     raw_json: dict[str, Any]
-

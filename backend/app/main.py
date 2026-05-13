@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .analyzer.github_client import GitHubClientError, fetch_repo_snapshot, parse_github_url
 from .analyzer.report import build_report
-from .database import DatabaseError, get_report, save_report
-from .schemas import AnalyzeRequest, AnalyzeResponse
+from .database import DatabaseError, get_report, list_top_checked_mcp_repositories, save_report
+from .schemas import AnalyzeRequest, AnalyzeResponse, TopRepository
 
 
 app = FastAPI(title="MCPCheck API")
@@ -22,6 +22,14 @@ app.add_middleware(
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/repositories/top", response_model=list[TopRepository])
+def top_repositories() -> list[TopRepository]:
+    try:
+        return [TopRepository(**repo) for repo in list_top_checked_mcp_repositories(limit=10)]
+    except DatabaseError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
@@ -57,4 +65,3 @@ def report(report_id: str) -> dict[str, object]:
     if not stored:
         raise HTTPException(status_code=404, detail="Report not found.")
     return stored
-

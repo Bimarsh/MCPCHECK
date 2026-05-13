@@ -149,3 +149,61 @@ def get_report(report_id: str) -> dict[str, Any] | None:
         if not row:
             return None
         return json.loads(row["raw_json"])
+
+
+def _decode_report(raw: Any) -> dict[str, Any]:
+    return raw if isinstance(raw, dict) else json.loads(raw)
+
+
+def list_top_checked_mcp_repositories(limit: int = 10) -> list[dict[str, Any]]:
+    init_db()
+    rows: list[Any]
+    if using_postgres():
+        with _postgres_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT raw_json
+                    FROM reports
+                    ORDER BY created_at DESC
+                    """
+                )
+                rows = cur.fetchall()
+    else:
+        path = _database_url().replace("sqlite:///", "", 1)
+        with _sqlite_conn(path) as conn:
+            rows = conn.execute(
+                """
+                SELECT raw_json
+                FROM reports
+                ORDER BY created_at DESC
+                """
+            ).fetchall()
+
+    repos: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        raw = row[0] if isinstance(row, tuple) else row["raw_json"]
+        report = _decode_report(raw)
+        repo = report.get("repo") or {}
+        owner = str(repo.get("owner") or "").strip()
+        name = str(repo.get("name") or "").strip()
+        if not owner or not name:
+            continue
+        key = f"{owner.lower()}/{name.lower()}"
+        entry = repos.setdefault(
+            key,
+            {
+                "repoUrl": repo.get("url") or f"https://github.com/{owner}/{name}",
+                "repoName": f"{owner}/{name}",
+                "checkCount": 0,
+                "confidence": float((report.get("mcpDetection") or {}).get("confidence") or 0),
+                "overallScore": int((report.get("scores") or {}).get("overall") or 0),
+                "riskLevel": (report.get("risk") or {}).get("level") or "Medium",
+                "latestReportId": report.get("id") or "",
+                "isLikelyMcpServer": bool((report.get("mcpDetection") or {}).get("isLikelyMcpServer")),
+            },
+        )
+        entry["checkCount"] += 1
+
+    top_repos = [repo for repo in repos.values() if repo.pop("isLikelyMcpServer")]
+    return sorted(top_repos, key=lambda repo: (-repo["checkCount"], -repo["confidence"], repo["repoName"]))[:limit]

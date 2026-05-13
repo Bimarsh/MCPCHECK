@@ -1,4 +1,4 @@
-import type { AnalyzeResponse, Report } from "./types";
+import type { AnalyzeResponse, Report, TopRepository } from "./types";
 
 async function readJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
@@ -23,3 +23,7 @@ export async function fetchReport(reportId: string): Promise<Report> {
   return readJson<Report>(response);
 }
 
+export async function fetchTopRepositories(): Promise<TopRepository[]> {
+  const response = await fetch("/api/repositories/top");
+  return readJson<TopRepository[]>(response);
+}
