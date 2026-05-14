@@ -1,7 +1,7 @@
 import { AlertTriangle, CheckCircle2, ExternalLink, GitBranch, Loader2, ShieldAlert, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { analyzeRepo, fetchReport, fetchTopRepositories } from "./api";
-import type { Report, RiskLevel, TopRepository } from "./types";
+import { analyzeMcpConfig, analyzeRepo, fetchReport, fetchTopRepositories } from "./api";
+import type { ConfigAnalyzeResult, Report, RiskLevel, TopRepository } from "./types";
 
 const examples = [
   "https://github.com/modelcontextprotocol/servers",
@@ -16,10 +16,21 @@ function riskClass(level: RiskLevel) {
   return `badge badge-${level.toLowerCase()}`;
 }
 
+function responseCodeLabel(result: ConfigAnalyzeResult) {
+  if (typeof result.responseCode === "number") {
+    return String(result.responseCode);
+  }
+  return result.healthCheckUrl ? result.responseError || "Unavailable" : "Not available";
+}
+
 function HomePage() {
   const [repoUrl, setRepoUrl] = useState("");
+  const [mcpConfig, setMcpConfig] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [configError, setConfigError] = useState("");
+  const [isConfigLoading, setIsConfigLoading] = useState(false);
+  const [configResults, setConfigResults] = useState<ConfigAnalyzeResult[]>([]);
   const [topRepositories, setTopRepositories] = useState<TopRepository[]>([]);
   const [topRepositoriesError, setTopRepositoriesError] = useState("");
 
@@ -48,40 +59,106 @@ function HomePage() {
     }
   }
 
+  async function submitConfig(event: React.FormEvent) {
+    event.preventDefault();
+    setConfigError("");
+    setConfigResults([]);
+    if (!mcpConfig.trim()) {
+      setConfigError("Paste an MCP config JSON object.");
+      return;
+    }
+    setIsConfigLoading(true);
+    try {
+      const result = await analyzeMcpConfig(mcpConfig.trim());
+      setConfigResults(result.results);
+    } catch (err) {
+      setConfigError(err instanceof Error ? err.message : "Config analysis failed.");
+    } finally {
+      setIsConfigLoading(false);
+    }
+  }
+
   return (
     <main className="shell">
       <section className="hero">
         <div>
           <div className="eyebrow"><ShieldAlert size={16} /> MCPCheck</div>
           <h1>Static quality and security reports for MCP servers</h1>
+          <p className="hero-lede">Check MCP servers before your agents use them.</p>
           <p>
-            Paste a public GitHub repository and get a deterministic report without running untrusted server code.
+            Paste a public GitHub repository or MCP config and get deterministic reports without running untrusted server code.
           </p>
         </div>
-        <form className="analyze-panel" onSubmit={submit}>
-          <label htmlFor="repo-url">GitHub repository URL</label>
-          <div className="input-row">
-            <GitBranch size={20} />
-            <input
-              id="repo-url"
-              value={repoUrl}
-              onChange={(event) => setRepoUrl(event.target.value)}
-              placeholder="https://github.com/org/repo"
-            />
-            <button type="submit" disabled={isLoading}>
-              {isLoading ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
-              Analyze
-            </button>
-          </div>
-          {error ? <p className="error">{error}</p> : null}
-          <div className="examples">
-            {examples.map((example) => (
-              <button key={example} type="button" onClick={() => setRepoUrl(example)}>
-                {example.replace("https://github.com/", "")}
+        <div className="analyze-panel">
+          <form onSubmit={submit}>
+            <label htmlFor="repo-url">GitHub repository URL</label>
+            <div className="input-row">
+              <GitBranch size={20} />
+              <input
+                id="repo-url"
+                value={repoUrl}
+                onChange={(event) => setRepoUrl(event.target.value)}
+                placeholder="https://github.com/org/repo"
+              />
+              <button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
+                Analyze
               </button>
-            ))}
-          </div>
-        </form>
+            </div>
+            {error ? <p className="error">{error}</p> : null}
+            <div className="examples">
+              {examples.map((example) => (
+                <button key={example} type="button" onClick={() => setRepoUrl(example)}>
+                  {example.replace("https://github.com/", "")}
+                </button>
+              ))}
+            </div>
+          </form>
+
+          <div className="config-divider"><span>or paste MCP config</span></div>
+
+          <form className="config-form" onSubmit={submitConfig}>
+            <label htmlFor="mcp-config">MCP config JSON</label>
+            <textarea
+              id="mcp-config"
+              value={mcpConfig}
+              onChange={(event) => setMcpConfig(event.target.value)}
+              placeholder={'{\n  "mcpServers": {\n    "server-name": {\n      "command": "npx",\n      "args": ["-y", "https://github.com/org/repo"],\n      "healthCheckUrl": "https://example.com/health"\n    }\n  }\n}'}
+            />
+            <button type="submit" disabled={isConfigLoading}>
+              {isConfigLoading ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
+              Analyze config
+            </button>
+          </form>
+          {configError ? <p className="error">{configError}</p> : null}
+          {configResults.length ? (
+            <div className="config-results">
+              {configResults.map((result) => (
+                <div className="config-result" key={`${result.serverName}-${result.repoUrl || "missing"}`}>
+                  <strong>{result.serverName}</strong>
+                  {result.status === "completed" && result.reportId && result.summary ? (
+                    <>
+                      <a href={`/reports/${encodeURIComponent(result.reportId)}`}>{result.summary.repoName}</a>
+                      <span>Response {responseCodeLabel(result)}</span>
+                      <span>{result.summary.overallScore}/100</span>
+                      <span>{result.summary.riskLevel} risk</span>
+                    </>
+                  ) : result.status === "validated" ? (
+                    <>
+                      <span>{result.healthCheckUrl || "Remote URL"}</span>
+                      <span>Response {responseCodeLabel(result)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{result.error || "Analysis did not complete."}</span>
+                      <span>Response {responseCodeLabel(result)}</span>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </section>
 
       <section className="top-repositories">

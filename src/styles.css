@@ -16,7 +16,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -64,6 +65,13 @@ p {
   line-height: 1.6;
 }
 
+.hero-lede {
+  color: #1c2430;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+
 .analyze-panel {
   background: #ffffff;
   border: 1px solid #dce3eb;
@@ -95,6 +103,7 @@ p {
 }
 
 .input-row button,
+.config-form button,
 .state button,
 .back {
   border: 0;
@@ -111,6 +120,11 @@ p {
 }
 
 .input-row button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.config-form button:disabled {
   opacity: 0.65;
   cursor: not-allowed;
 }
@@ -133,6 +147,68 @@ p {
   color: #334155;
   border-radius: 8px;
   padding: 8px 10px;
+}
+
+.config-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #697586;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 18px 0;
+  text-transform: uppercase;
+}
+
+.config-divider::before,
+.config-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #dce3eb;
+}
+
+.config-form {
+  display: grid;
+  gap: 10px;
+}
+
+.config-form textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  color: #1c2430;
+  line-height: 1.45;
+  outline: 0;
+  padding: 12px;
+}
+
+.config-results {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.config-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #dce3eb;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.config-result span {
+  overflow-wrap: anywhere;
+}
+
+.config-result a {
+  color: #176a5f;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .top-repositories {
@@ -419,5 +495,9 @@ p {
 
   .top-row {
     grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .config-result {
+    grid-template-columns: 1fr;
   }
 }

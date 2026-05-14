@@ -41,6 +41,13 @@ Optional:
 - `MCP_MAX_FILES`: max relevant files fetched per repository.
 - `MCP_MAX_FILE_BYTES`: max bytes fetched per file.
 - `MCP_MAX_TREE_ITEMS`: max GitHub tree entries considered.
+- `MCP_MAX_CONFIG_BYTES`: max pasted MCP config size accepted by `/api/analyze-config`.
+- `MCP_MAX_CONFIG_SERVERS`: max MCP server entries accepted per pasted config.
+- `MCP_MAX_CONFIG_ANALYSES`: max GitHub-backed MCP servers analyzed per config.
+- `MCP_MAX_REMOTE_VALIDATIONS`: max explicit remote health URLs checked per config.
+- `MCP_REMOTE_VALIDATION_TIMEOUT_SECONDS`: timeout for remote MCP health checks.
+- `MCP_ALLOW_HTTP_REMOTE_VALIDATION`: set to `true` only if you intentionally want non-HTTPS remote checks.
+- `MCPCHECK_ALLOWED_ORIGINS`: comma-separated browser origins allowed by CORS. Use your production domain instead of `*` for public deployments.
 
 ## Neon Setup
 
@@ -94,6 +101,19 @@ Open `http://localhost:5173`. The Vite dev server proxies `/api` to `http://loca
 
 The frontend and `/api/*` routes are served from the same Vercel deployment. `/reports/:id` is rewritten to the Vite app for client-side routing.
 
+## Public Deployment Safety
+
+MCPCheck is designed to stay public without executing user-supplied MCP commands:
+
+- It never runs `npx`, `uvx`, shell commands, local scripts, Docker, or repository code from pasted configs.
+- Repository analysis fetches selected text files from GitHub only, with file count, file size, and tree limits.
+- Remote MCP validation only checks explicit HTTP(S) URLs from fields such as `url`, `endpoint`, or `healthCheckUrl`.
+- Remote validation requires HTTPS by default, blocks private/reserved/localhost addresses, blocks credentials in URLs, blocks non-standard ports, does not follow redirects, and uses short timeouts.
+- Pasted config analysis has separate byte, server count, GitHub repo, and remote URL limits so anonymous requests remain bounded.
+- If no explicit remote health URL is available, the UI reports the response code as `Not available`.
+
+For production, configure Vercel WAF/rate limits or another edge rate limiter for `/api/analyze` and `/api/analyze-config`. Anonymous analysis can still consume GitHub API quota and serverless execution time even though it does not execute untrusted code.
+
 ## API
 
 ```http
@@ -132,6 +152,15 @@ GET /api/reports/{reportId}
 ```
 
 Returns the full report JSON.
+
+```http
+POST /api/analyze-config
+Content-Type: application/json
+
+{ "config": "{\"mcpServers\":{\"server\":{\"url\":\"https://example.com/health\"}}}" }
+```
+
+Returns one result per MCP server, including a report link when a GitHub repo is analyzed and a `responseCode` when an explicit remote health URL can be checked.
 
 ## Scoring
 

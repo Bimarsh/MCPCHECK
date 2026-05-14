@@ -10,6 +10,22 @@ export interface AnalyzeResponse {
   };
 }
 
+export interface ConfigAnalyzeResult {
+  serverName: string;
+  repoUrl?: string | null;
+  healthCheckUrl?: string | null;
+  responseCode?: number | null;
+  responseError?: string | null;
+  reportId?: string | null;
+  status: "completed" | "validated" | "failed" | "skipped";
+  summary?: AnalyzeResponse["summary"] | null;
+  error?: string | null;
+}
+
+export interface AnalyzeConfigResponse {
+  results: ConfigAnalyzeResult[];
+}
+
 export interface TopRepository {
   repoUrl: string;
   repoName: string;
